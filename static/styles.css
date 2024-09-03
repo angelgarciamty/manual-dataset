@@ -1,0 +1,21 @@
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #ecf0f5;
+}
+img{
+    width: 200px;
+    height: auto;
+}
+#image-container, #actions-container{
+    max-width: 500px;
+    margin: auto;
+}
+.row{
+    display: flex;
+    margin-bottom:40px;
+    gap: 28px;
+}
+textarea{
+    border: 1px solid #c5cad1;
+    border-radius: 4px;
+}

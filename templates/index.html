@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generar Descripciones para Loras</title>
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+    
+    <div id="image-container">
+        <h2>Generar Descripciones para Loras</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="images" accept="image/*" multiple required>
+            <button type="submit">Subir Imágenes</button>
+        </form>
+        <div id="uploadStatus"></div>      
+        <div>
+            <input type="text" name="" id="base"><button id="add-base">Agregar</button>
+        </div>
+        <p>Numero de imagenes:<span id="num-imgs"></span></p>
+    </div>
+    <div id="actions-container">
+        <button id="save-descriptions">Guardar descripciones</button>
+    </div>
+    <script>
+        let images = [];
+        
+        let button=document.getElementById("save-descriptions").addEventListener("click",()=>{
+            saveDescriptions();
+        })
+        let addBase=document.getElementById("add-base").addEventListener("click",()=>{
+            const textareas=Array.from(document.getElementsByTagName("textarea"));
+            textareas.forEach(elem=>{
+                elem.textContent = "a photograph of "+document.getElementById("base").value;
+            })
+        })
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Evita que el formulario se envíe de la manera tradicional
+
+            const formData = new FormData(this); // Crear un objeto FormData con los datos del formulario
+
+            fetch('/upload-image', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('uploadStatus').textContent = `Error: ${data.error}`;
+                } else {
+                    loadImages();
+                    document.getElementById('uploadStatus').textContent = 'Imágenes subidas correctamente: ' + data.filenames.join(', ');
+                    // Puedes actualizar la lista de imágenes aquí si quieres mostrar las nuevas imágenes sin recargar la página
+                }
+            })
+            .catch(error => {
+                console.error('Error al subir las imágenes:', error);
+                document.getElementById('uploadStatus').textContent = 'Hubo un error al subir las imágenes.';
+            });
+        });
+
+        // Cargar las imágenes desde el servidor
+        function loadImages(){
+        fetch('/images')
+            .then(response => response.json())
+            .then(imgs => {
+                images = imgs;
+                const imageContainer = document.getElementById('image-container');
+                images.forEach(image => {
+                    // Crear un contenedor para cada imagen
+                    const div = document.createElement('div');
+                    div.classList.add("row");
+
+                    // Crear el elemento de imagen
+                    const img = document.createElement('img');
+                    img.src = '/images/' + image;
+                    img.alt = image;
+
+                    // Crear el cuadro de texto para la descripción
+                    const textarea = document.createElement('textarea');
+                    textarea.placeholder = 'Escribe la descripción aquí...';
+                    textarea.rows = 4;
+                    textarea.cols = 50;
+
+                    // Agregar los elementos al contenedor
+                    div.appendChild(img);
+                    div.appendChild(textarea);
+                    imageContainer.appendChild(div);
+                });
+                const numImgs=document.getElementById("num-imgs");
+                numImgs.innerHTML=images.length;
+            })
+            .catch(error => {
+                console.error('Error al cargar las imágenes:', error);
+            });
+        }
+        loadImages();
+
+        function saveDescription(imageName, description) {
+            fetch('/save-description', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ imageName, description }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    
+                })
+                .catch(error => {
+                    console.error('Error al guardar la descripción:', error);
+                });
+        }
+        
+        function saveDescriptions(){
+            const textareas=Array.from(document.getElementsByTagName("textarea"));
+            const descriptions = [];
+            textareas.forEach(elem=>{
+                descriptions.push(elem.value);
+            })
+            images.forEach((image,i)=>{
+                saveDescription(image,descriptions[i]);
+            })
+            alert("descripciones guardadas correctamente");
+        }
+    </script>
+</body>
+</html>
